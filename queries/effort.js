@@ -26,24 +26,12 @@ const getSegmentEffort = (request, response) => {
   pool.query('SELECT * FROM segmenteffort WHERE id = $1', [id], (error, results) => {
     if (error) throw error;
 
-    response.status(200).json(results.rows);
+    response.status(200).json(results.rows[0]);
   });
 };
 
 const createSegmentEffort = (request, response) => {
-  const {
-    id,
-    userId,
-    segmentId,
-    activityId,
-    elapsed_time,
-    start_date,
-    distance,
-    is_kom,
-    name,
-    moving_time,
-    average_watts,
-  } = request.body;
+  const { id, userId, segmentId, activityId, elapsed_time, start_date, distance, is_kom, name, moving_time, average_watts } = request.body;
 
   pool.query(
     'INSERT INTO segmenteffort (id, userId, segmentId, activityId, elapsed_time, start_date, distance, is_kom, name, moving_time, average_watts) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',
