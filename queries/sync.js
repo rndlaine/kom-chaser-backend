@@ -9,6 +9,9 @@ const syncActivity = async (request, response) => {
   const userId = parseInt(request.params.id);
   if (!request.body.accessToken) throw 'No access token was supplied';
   if (!(await checkIsAuthValid(request.headers, userId))) throw "You don't have the right to see this...";
+
+  await pool.query('INSERT INTO athlete (id) VALUES ($1)', [userId], handleSyncError);
+
   const activities = await strava.getActivities(request.body.accessToken);
 
   const activitiesWithGear = activities.filter((activity) => !!activity.gear_id);
