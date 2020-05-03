@@ -14,9 +14,13 @@ const syncActivity = async (request, response) => {
   const uniqueByGearIds = lodash.uniqBy(activitiesWithGear, (activity) => activity.gear_id);
 
   uniqueByGearIds.forEach((activity) => {
-    strava.getEquipment(request.body.accessToken, activity.gear_id).then((gear) => {
-      // prettier-ignore
-      pool.query('INSERT INTO gear (id, name, description, primary_gear) VALUES ($1,$2,$3,$4)', gearProperties.map((key) => gear[key]), handleSyncError);
+    pool.query('SELECT * from gear where id = ($1)', [activity.gear_id]).then((results) => {
+      if (lodash.isEmpty(results.rows)) {
+        strava.getEquipment(request.body.accessToken, activity.gear_id).then((gear) => {
+          // prettier-ignore
+          pool.query('INSERT INTO gear (id, name, description, primary_gear) VALUES ($1,$2,$3,$4)', gearProperties.map((key) => gear[key]), handleSyncError);
+        });
+      }
     });
   });
 
@@ -36,7 +40,14 @@ const syncSegmentEfforts = async (request, response) => {
   const userId = parseInt(request.params.id);
   const activities = await strava.getActivities(request.body.accessToken);
 
-  const stravaPromises = activities.map((activitySummary) => strava.getActivity(request.body.accessToken, activitySummary.id));
+  const stravaPromises = activities.map((activitySummary) => {
+    pool.query('SELECT * from segmentEffort where activityId = ($1)', [effort.activityId]).then((results) => {
+      if (lodash.isEmpty(results.rows)) {
+        console.log('AJOUT ACTIVITY');
+        strava.getActivity(request.body.accessToken, activitySummary.id);
+      }
+    });
+  });
   const stravaActivities = await Promise.all(stravaPromises);
 
   const segmentPromises = stravaActivities.map((activity) => {
