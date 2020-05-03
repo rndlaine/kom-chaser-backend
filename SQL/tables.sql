@@ -33,6 +33,7 @@ CREATE TABLE segment (
 );
 
 CREATE TABLE segmentEffort (
+    id text NOT NULL PRIMARY KEY,
     userId bigint NOT NULL REFERENCES athlete(id),
     segmentId bigint NOT NULL REFERENCES segment(id),
     activityId bigint NOT NULL REFERENCES activity(id),
