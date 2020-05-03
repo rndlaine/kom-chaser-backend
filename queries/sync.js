@@ -1,5 +1,4 @@
 const lodash = require('lodash');
-const { checkIsAuthValid } = require('./validate');
 const { pool } = require('./pool');
 const strava = require('../agents/strava');
 const { handleSyncError } = require('./error');
@@ -8,7 +7,6 @@ const { leaderboardProperties, gearProperties, activityProperties, effortPropert
 const syncActivity = async (request, response) => {
   const userId = parseInt(request.params.id);
   if (!request.body.accessToken) throw 'No access token was supplied';
-  if (!(await checkIsAuthValid(request.headers, userId))) throw "You don't have the right to see this...";
 
   await pool.query('INSERT INTO athlete (id) VALUES ($1)', [userId], handleSyncError);
 
@@ -42,7 +40,6 @@ const syncSegmentEfforts = async (request, response) => {
   if (!request.body.accessToken) throw 'No access token was supplied';
 
   const userId = parseInt(request.params.id);
-  if (!(await checkIsAuthValid(request.headers, userId))) throw "You don't have the right to see this...";
   const stravaActivities = await strava.getActivities(request.body.accessToken);
 
   let stravaActivitiesPromises = [];
@@ -84,7 +81,6 @@ const syncLeaderboard = async (request, response) => {
   const userId = parseInt(request.params.id);
 
   if (!request.body.accessToken) throw 'No access token was supplied';
-  if (!(await checkIsAuthValid(request.headers, userId))) throw "You don't have the right to see this...";
 
   pool.query('SELECT * from segmenteffort where userId = ($1)', [userId]).then((results) => {
     const efforts = results.rows;
