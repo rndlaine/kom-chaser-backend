@@ -1,45 +1,47 @@
 const lodash = require('lodash');
 const { pool } = require('./pool');
+const { getKOMRating } = require('../helpers/KOMRatingHelpers');
 
-const getSegmentEffortsByActivity = (request, response) => {
-  const activityId = parseInt(request.params.id);
+const getKOMRatings = async (rows) => {
+  const leaderboards = await pool.query('SELECT * FROM leaderboard', []);
+  const segments = await pool.query('SELECT * FROM segment', []);
 
-  pool.query('SELECT * FROM segmenteffort WHERE activityid = $1', [activityId], (error, results) => {
-    if (error) throw error;
+  return rows.map((item) => {
+    const board = leaderboards.rows.find((leaderboard) => leaderboard.segmentid === item.segmentid && leaderboard.rank === '1');
+    const segment = segments.rows.find((x) => x.id === item.segmentid) || {};
 
-    response.status(200).json(results.rows);
+    return { ...item, ...getKOMRating(item, board), city: segment.city };
   });
 };
 
-const getSegmentEffortsByUser = (request, response) => {
-  const userId = parseInt(request.params.id);
+const getSegmentEffortsByActivity = async (request, response) => {
+  const activityId = parseInt(request.params.id);
 
-  pool.query('SELECT * FROM segmenteffort WHERE userid = $1', [userId], (error, results) => {
+  pool.query('SELECT * FROM segmenteffort WHERE activityid = $1', [activityId], async (error, results) => {
     if (error) throw error;
 
-    response.status(200).json(results.rows);
+    response.status(200).json(await getKOMRatings(results.rows));
+  });
+};
+
+const getSegmentEffortsByUser = async (request, response) => {
+  const userId = parseInt(request.params.id);
+
+  pool.query('SELECT * FROM segmenteffort WHERE userid = $1', [userId], async (error, results) => {
+    if (error) throw error;
+
+    response.status(200).json(await getKOMRatings(results.rows));
   });
 };
 
 const getBestSegmentEffortsByUser = async (request, response) => {
   const userId = parseInt(request.params.id);
 
-  const result = await pool.query('SELECT * FROM leaderboard', []);
-  const leaderboards = result.rows;
-
-  pool.query('SELECT * FROM segmenteffort WHERE userid = $1', [userId], (error, results) => {
+  pool.query('SELECT * FROM segmenteffort WHERE userid = $1', [userId], async (error, results) => {
     if (error) throw error;
 
-    const filteredEfforts = results.rows.filter((effort) => {
-      const board = leaderboards.find((leaderboard) => leaderboard.segmentid === effort.segmentid && leaderboard.rank === '1');
-      return board && effort.elapsed_time;
-    });
-
-    const sortedEfforts = lodash.sortBy(filteredEfforts, (effort) => {
-      const board = leaderboards.find((leaderboard) => leaderboard.segmentid === effort.segmentid && leaderboard.rank === '1');
-      return board.elapsed_time / effort.elapsed_time;
-    });
-
+    const updatedEfforts = await getKOMRatings(results.rows);
+    const sortedEfforts = lodash.sortBy(updatedEfforts, (effort) => effort.komScore);
     const uniqueEfforts = lodash.uniqBy(sortedEfforts.reverse(), (item) => item.segmentid);
 
     response.status(200).json(uniqueEfforts.slice(0, 100));
@@ -49,20 +51,20 @@ const getBestSegmentEffortsByUser = async (request, response) => {
 const getSegmentEffortsBySegment = (request, response) => {
   const userId = parseInt(request.params.id);
 
-  pool.query('SELECT * FROM segmenteffort WHERE segmentid = $1', [userId], (error, results) => {
+  pool.query('SELECT * FROM segmenteffort WHERE segmentid = $1', [userId], async (error, results) => {
     if (error) throw error;
 
-    response.status(200).json(results.rows);
+    response.status(200).json(await getKOMRatings(results.rows));
   });
 };
 
 const getSegmentEffort = (request, response) => {
   const id = parseInt(request.params.id);
 
-  pool.query('SELECT * FROM segmenteffort WHERE id = $1', [id], (error, results) => {
+  pool.query('SELECT * FROM segmenteffort WHERE id = $1', [id], async (error, results) => {
     if (error) throw error;
 
-    response.status(200).json(results.rows[0]);
+    response.status(200).json(await getKOMRatings(results.rows)[0]);
   });
 };
 
