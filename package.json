@@ -7,8 +7,13 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
   },
-  "keywords": [],
-  "author": "",
+  "engines": {
+    "node": "12.x"
+  },
+  "keywords": [
+    "kom"
+  ],
+  "author": "fredbegin",
   "license": "ISC",
   "dependencies": {
     "axios": "^0.19.2",
