@@ -6,19 +6,10 @@ const sync = require('./sync');
 const gear = require('./gear');
 
 module.exports = {
-  getAthlete: athlete.getAthlete,
-  createAthlete: athlete.createAthlete,
-  getActivitiesByUser: activity.getActivitiesByUser,
-  getActivity: activity.getActivity,
-  createActivity: activity.createActivity,
-  getSegment: segment.getSegment,
-  createSegment: segment.createSegment,
-  getSegmentEffort: effort.getSegmentEffort,
-  createSegmentEffort: effort.createSegmentEffort,
-  getSegmentEffortsByUser: effort.getSegmentEffortsByUser,
-  getSegmentEffortsByActivity: effort.getSegmentEffortsByActivity,
-  syncActivity: sync.syncActivity,
-  syncSegmentEfforts: sync.syncSegmentEfforts,
-  getEquipment: gear.getEquipment,
-  createEquipment: gear.createEquipment,
+  ...athlete,
+  ...activity,
+  ...effort,
+  ...sync,
+  ...gear,
+  ...segment,
 };

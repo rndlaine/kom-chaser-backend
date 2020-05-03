@@ -36,4 +36,15 @@ const getEquipment = async (accessToken, id) => {
   }
 };
 
-module.exports = { getEquipment, getActivities, getActivity };
+const getLeaderboard = async (accessToken, segmentid) => {
+  try {
+    const result = await axios.get(`https://www.strava.com/api/v3/segments/${segmentid}/leaderboard`, getHeaders(accessToken));
+
+    return result.data;
+  } catch (e) {
+    console.log('e: ', e.message);
+    throw 'Unable to connect to strava';
+  }
+};
+
+module.exports = { getLeaderboard, getEquipment, getActivities, getActivity };

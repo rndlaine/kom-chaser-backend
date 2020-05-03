@@ -20,6 +20,16 @@ const getSegmentEffortsByUser = (request, response) => {
   });
 };
 
+const getSegmentEffortsBySegment = (request, response) => {
+  const userId = parseInt(request.params.id);
+
+  pool.query('SELECT * FROM segmenteffort WHERE segmentid = $1', [userId], (error, results) => {
+    if (error) throw error;
+
+    response.status(200).json(results.rows);
+  });
+};
+
 const getSegmentEffort = (request, response) => {
   const id = parseInt(request.params.id);
 
@@ -44,4 +54,4 @@ const createSegmentEffort = (request, response) => {
   );
 };
 
-module.exports = { getSegmentEffort, createSegmentEffort, getSegmentEffortsByUser, getSegmentEffortsByActivity };
+module.exports = { getSegmentEffortsBySegment, getSegmentEffort, createSegmentEffort, getSegmentEffortsByUser, getSegmentEffortsByActivity };

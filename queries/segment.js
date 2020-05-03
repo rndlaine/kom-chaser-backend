@@ -10,6 +10,30 @@ const getSegment = (request, response) => {
   });
 };
 
+const getSegmentLeaderboard = (request, response) => {
+  const id = parseInt(request.params.id);
+
+  pool.query('SELECT * FROM leaderboard WHERE segmentid = $1', [id], (error, results) => {
+    if (error) throw error;
+
+    response.status(200).json(results.rows);
+  });
+};
+
+const createLeaderboard = (request, response) => {
+  const { segmentId, athlete_name, elapsed_time, moving_time, start_date, rank } = request.body;
+
+  pool.query(
+    'INSERT INTO leaderboard (segmentId, athlete_name, elapsed_time, moving_time, start_date, rank) VALUES ($1,$2,$3,$4,$5,$6)',
+    [segmentId, athlete_name, elapsed_time, moving_time, start_date, rank],
+    (error, results) => {
+      if (error) throw error;
+
+      response.status(201).send(`Leaderboard added with ID: ${id}`);
+    },
+  );
+};
+
 const createSegment = (request, response) => {
   const { id, name, activity_type, distance, city, state, country, created_at, total_elevation_gain } = request.body;
 
@@ -24,4 +48,4 @@ const createSegment = (request, response) => {
   );
 };
 
-module.exports = { getSegment, createSegment };
+module.exports = { createLeaderboard, getSegment, getSegmentLeaderboard, createSegment };

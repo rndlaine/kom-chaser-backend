@@ -33,11 +33,15 @@ app.post('/gear', db.createEquipment);
 
 app.get('/activity/:id/segmentefforts', db.getSegmentEffortsByActivity);
 app.get('/athlete/:id/segmentefforts', db.getSegmentEffortsByUser);
+app.get('/segment/:id/segmentefforts', db.getSegmentEffortsBySegment);
 app.get('/segmentefforts/:id', db.getSegmentEffort);
 app.post('/segmentefforts', db.createSegmentEffort);
 
+app.get('/segment/:id/leaderboard', db.getSegmentLeaderboard);
+
 app.post('/athlete/:id/sync-activity', db.syncActivity);
 app.post('/athlete/:id/sync-efforts', db.syncSegmentEfforts);
+app.post('/athlete/:id/sync-leaderboard', db.syncLeaderboard);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);

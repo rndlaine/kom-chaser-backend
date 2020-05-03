@@ -6,5 +6,7 @@ const activityProperties = ['id','user_id','name','distance','moving_time','elap
 const effortProperties = ['id', 'userId', 'segmentId', 'activityId', 'elapsed_time', 'start_date', 'distance', 'is_kom', 'name', 'moving_time', 'average_watts'];
 // prettier-ignore
 const segmentProperties = ['id', 'name', 'activity_type', 'distance', 'city', 'state', 'country', 'created_at', 'total_elevation_gain'];
+// prettier-ignore
+const leaderboardProperties = ["segmentId", "athlete_name", "elapsed_time", "moving_time", "start_date", "rank"];
 
-module.exports = { gearProperties, effortProperties, segmentProperties, activityProperties };
+module.exports = { leaderboardProperties, gearProperties, effortProperties, segmentProperties, activityProperties };

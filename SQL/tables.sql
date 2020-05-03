@@ -29,7 +29,8 @@ CREATE TABLE segment (
     state text,
     country text,
     created_at date,
-    total_elevation_gain float
+    total_elevation_gain float,
+    leaderboard_id bigint,
 );
 
 CREATE TABLE segmentEffort (
@@ -51,4 +52,13 @@ CREATE TABLE gear (
     name text,
     description text,
     primary_gear boolean
+);
+
+CREATE TABLE leaderboard (
+    segmentId bigint NOT NULL REFERENCES segment(id),
+    athlete_name text,
+    elapsed_time bigint,
+    moving_time bigint,
+    start_date date,
+    rank bigint
 );
