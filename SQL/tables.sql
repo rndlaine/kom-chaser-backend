@@ -30,7 +30,7 @@ CREATE TABLE segment (
     country text,
     created_at date,
     total_elevation_gain float,
-    leaderboard_id bigint,
+    leaderboard_id bigint
 );
 
 CREATE TABLE segmentEffort (
