@@ -45,3 +45,10 @@ CREATE TABLE segmentEffort (
     moving_time bigint,
     average_watts float
 );
+
+CREATE TABLE gear (
+    id varchar(20) NOT NULL PRIMARY KEY,
+    name text,
+    description text,
+    primary_gear boolean
+);

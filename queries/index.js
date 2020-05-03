@@ -3,6 +3,7 @@ const activity = require('./activity');
 const effort = require('./effort');
 const segment = require('./segment');
 const sync = require('./sync');
+const gear = require('./gear');
 
 module.exports = {
   getAthlete: athlete.getAthlete,
@@ -18,4 +19,6 @@ module.exports = {
   getSegmentEffortsByActivity: effort.getSegmentEffortsByActivity,
   syncActivity: sync.syncActivity,
   syncSegmentEfforts: sync.syncSegmentEfforts,
+  getEquipment: gear.getEquipment,
+  createEquipment: gear.createEquipment,
 };

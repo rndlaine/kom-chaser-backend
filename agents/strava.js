@@ -26,4 +26,14 @@ const getActivity = async (accessToken, id) => {
   }
 };
 
-module.exports = { getActivities, getActivity };
+const getEquipment = async (accessToken, id) => {
+  try {
+    const result = await axios.get(`https://www.strava.com/api/v3/gear/${id}`, getHeaders(accessToken));
+
+    return result.data;
+  } catch (e) {
+    throw 'Unable to connect to strava';
+  }
+};
+
+module.exports = { getEquipment, getActivities, getActivity };

@@ -1,7 +1,8 @@
+const lodash = require('lodash');
 const { pool } = require('./pool');
 const strava = require('../agents/strava');
 const { handleSyncError } = require('./error');
-const { activityProperties, effortProperties, segmentProperties } = require('../fixtures/properties');
+const { gearProperties, activityProperties, effortProperties, segmentProperties } = require('../fixtures/properties');
 
 const syncActivity = async (request, response) => {
   const userId = parseInt(request.params.id);
@@ -9,11 +10,21 @@ const syncActivity = async (request, response) => {
   if (!request.body.accessToken) throw 'No access token was supplied';
   const activities = await strava.getActivities(request.body.accessToken);
 
+  const activitiesWithGear = activities.filter((activity) => !!activity.gear_id);
+  const uniqueByGearIds = lodash.uniqBy(activitiesWithGear, (activity) => activity.gear_id);
+
+  uniqueByGearIds.forEach((activity) => {
+    strava.getEquipment(request.body.accessToken, activity.gear_id).then((gear) => {
+      // prettier-ignore
+      pool.query('INSERT INTO gear (id, name, description, primary_gear) VALUES ($1,$2,$3,$4)', gearProperties.map((key) => gear[key]), handleSyncError);
+    });
+  });
+
   activities.forEach((activity) => {
     const updatedActivity = { ...activity, user_id: userId };
 
     // prettier-ignore
-    pool.query('INSERT INTO activity (id, userId, name, distance, moving_time, elapsed_time, total_elevation_gain, elev_high, elev_low, type, start_date, average_speed, gear_id, average_watts, description) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)', activityProperties.map((key) => updatedActivity[key]), handleError);
+    pool.query('INSERT INTO activity (id, userId, name, distance, moving_time, elapsed_time, total_elevation_gain, elev_high, elev_low, type, start_date, average_speed, gear_id, average_watts, description) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)', activityProperties.map((key) => updatedActivity[key]), handleSyncError);
   });
 
   response.status(201).send(`Activities Synced for userID: ${userId}`);
@@ -39,7 +50,7 @@ const syncSegmentEfforts = async (request, response) => {
 
   const segmentEffortPromises = stravaActivities.map((activity) => {
     activity.segment_efforts.map((effort) => {
-      const updatedEffort = { ...effort, id: `${effort.id}-${effort.start_date}`, userId, segmentId: effort.segment.id, activityId: '3353001667' };
+      const updatedEffort = { ...effort, id: `${effort.id}-${effort.start_date}`, userId, segmentId: effort.segment.id, activityId: activity.id };
 
       // prettier-ignore
       pool.query('INSERT INTO segmentEffort (id, userId, segmentId, activityId, elapsed_time, start_date, distance, is_kom, name, moving_time, average_watts) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)', effortProperties.map((key) => updatedEffort[key]), handleSyncError);

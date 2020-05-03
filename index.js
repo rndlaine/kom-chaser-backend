@@ -28,6 +28,9 @@ app.post('/activity', db.createActivity);
 app.get('/segment/:id', db.getSegment);
 app.post('/segment', db.createSegment);
 
+app.get('/gear/:id', db.getEquipment);
+app.post('/gear', db.createEquipment);
+
 app.get('/activity/:id/segmentefforts', db.getSegmentEffortsByActivity);
 app.get('/athlete/:id/segmentefforts', db.getSegmentEffortsByUser);
 app.get('/segmentefforts/:id', db.getSegmentEffort);
