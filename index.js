@@ -20,26 +20,16 @@ app.get('/', (request, response) => {
 
 app.get('/athlete/:id', db.getAthlete);
 app.post('/athlete', db.createAthlete);
-
 app.get('/athlete/:id/activity', db.getActivitiesByUser);
 app.get('/activity/:id', db.getActivity);
-app.post('/activity', db.createActivity);
-
 app.get('/segment/:id', db.getSegment);
-app.post('/segment', db.createSegment);
-
 app.get('/gear/:id', db.getEquipment);
-app.post('/gear', db.createEquipment);
-
 app.get('/activity/:id/segmentefforts', db.getSegmentEffortsByActivity);
 app.get('/athlete/:id/segmentefforts', db.getSegmentEffortsByUser);
 app.get('/athlete/:id/bestsegmentefforts', db.getBestSegmentEffortsByUser);
 app.get('/segment/:id/segmentefforts', db.getSegmentEffortsBySegment);
 app.get('/segmentefforts/:id', db.getSegmentEffort);
-app.post('/segmentefforts', db.createSegmentEffort);
-
 app.get('/segment/:id/leaderboard', db.getSegmentLeaderboard);
-
 app.post('/athlete/:id/sync-activity', db.syncActivity);
 app.post('/athlete/:id/sync-efforts', db.syncSegmentEfforts);
 app.post('/athlete/:id/sync-leaderboard', db.syncLeaderboard);

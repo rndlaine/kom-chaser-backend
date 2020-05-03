@@ -1,3 +1,4 @@
+const { checkIsAuthValid, checkIsAuthenticated } = require('./validate');
 const lodash = require('lodash');
 const { pool } = require('./pool');
 const { getKOMRating } = require('../helpers/KOMRatingHelpers');
@@ -16,6 +17,7 @@ const getKOMRatings = async (rows) => {
 
 const getSegmentEffortsByActivity = async (request, response) => {
   const activityId = parseInt(request.params.id);
+  if (!(await checkIsAuthenticated(request.headers))) throw 'Not Authenticated...';
 
   pool.query('SELECT * FROM segmenteffort WHERE activityid = $1', [activityId], async (error, results) => {
     if (error) throw error;
@@ -26,6 +28,7 @@ const getSegmentEffortsByActivity = async (request, response) => {
 
 const getSegmentEffortsByUser = async (request, response) => {
   const userId = parseInt(request.params.id);
+  if (!(await checkIsAuthValid(request.headers, userId))) throw "You don't have the right to see this...";
 
   pool.query('SELECT * FROM segmenteffort WHERE userid = $1', [userId], async (error, results) => {
     if (error) throw error;
@@ -36,6 +39,8 @@ const getSegmentEffortsByUser = async (request, response) => {
 
 const getBestSegmentEffortsByUser = async (request, response) => {
   const userId = parseInt(request.params.id);
+
+  if (!(await checkIsAuthValid(request.headers, userId))) throw "You don't have the right to see this...";
 
   pool.query('SELECT * FROM segmenteffort WHERE userid = $1', [userId], async (error, results) => {
     if (error) throw error;
@@ -48,18 +53,21 @@ const getBestSegmentEffortsByUser = async (request, response) => {
   });
 };
 
-const getSegmentEffortsBySegment = (request, response) => {
-  const userId = parseInt(request.params.id);
+const getSegmentEffortsBySegment = async (request, response) => {
+  const segmentid = parseInt(request.params.id);
 
-  pool.query('SELECT * FROM segmenteffort WHERE segmentid = $1', [userId], async (error, results) => {
+  if (!(await checkIsAuthenticated(request.headers))) throw "You don't have the right to see this...";
+
+  pool.query('SELECT * FROM segmenteffort WHERE segmentid = $1', [segmentid], async (error, results) => {
     if (error) throw error;
 
     response.status(200).json(await getKOMRatings(results.rows));
   });
 };
 
-const getSegmentEffort = (request, response) => {
+const getSegmentEffort = async (request, response) => {
   const id = parseInt(request.params.id);
+  if (!(await checkIsAuthenticated(request.headers))) throw 'Not Authenticated...';
 
   pool.query('SELECT * FROM segmenteffort WHERE id = $1', [id], async (error, results) => {
     if (error) throw error;
@@ -68,18 +76,4 @@ const getSegmentEffort = (request, response) => {
   });
 };
 
-const createSegmentEffort = (request, response) => {
-  const { id, userId, segmentId, activityId, elapsed_time, start_date, distance, is_kom, name, moving_time, average_watts } = request.body;
-
-  pool.query(
-    'INSERT INTO segmenteffort (id, userId, segmentId, activityId, elapsed_time, start_date, distance, is_kom, name, moving_time, average_watts) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',
-    [id, userId, segmentId, activityId, elapsed_time, start_date, distance, is_kom, name, moving_time, average_watts],
-    (error, results) => {
-      if (error) throw error;
-
-      response.status(201).send(`SegmentEffort added with ID: ${id}`);
-    },
-  );
-};
-
-module.exports = { getBestSegmentEffortsByUser, getSegmentEffortsBySegment, getSegmentEffort, createSegmentEffort, getSegmentEffortsByUser, getSegmentEffortsByActivity };
+module.exports = { getBestSegmentEffortsByUser, getSegmentEffortsBySegment, getSegmentEffort, getSegmentEffortsByUser, getSegmentEffortsByActivity };

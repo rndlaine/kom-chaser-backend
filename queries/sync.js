@@ -1,4 +1,5 @@
 const lodash = require('lodash');
+const { checkIsAuthValid } = require('./validate');
 const { pool } = require('./pool');
 const strava = require('../agents/strava');
 const { handleSyncError } = require('./error');
@@ -6,8 +7,8 @@ const { leaderboardProperties, gearProperties, activityProperties, effortPropert
 
 const syncActivity = async (request, response) => {
   const userId = parseInt(request.params.id);
-
   if (!request.body.accessToken) throw 'No access token was supplied';
+  if (!(await checkIsAuthValid(request.headers, userId))) throw "You don't have the right to see this...";
   const activities = await strava.getActivities(request.body.accessToken);
 
   const activitiesWithGear = activities.filter((activity) => !!activity.gear_id);
@@ -38,19 +39,22 @@ const syncSegmentEfforts = async (request, response) => {
   if (!request.body.accessToken) throw 'No access token was supplied';
 
   const userId = parseInt(request.params.id);
-  const activities = await strava.getActivities(request.body.accessToken);
+  if (!(await checkIsAuthValid(request.headers, userId))) throw "You don't have the right to see this...";
+  const stravaActivities = await strava.getActivities(request.body.accessToken);
 
-  const stravaPromises = activities.map((activitySummary) => {
-    pool.query('SELECT * from segmentEffort where activityId = ($1)', [effort.activityId]).then((results) => {
-      if (lodash.isEmpty(results.rows)) {
-        console.log('AJOUT ACTIVITY');
-        strava.getActivity(request.body.accessToken, activitySummary.id);
-      }
-    });
-  });
-  const stravaActivities = await Promise.all(stravaPromises);
+  let stravaActivitiesPromises = [];
+  let i = 0;
+  for (i = 0; i < stravaActivities.length; i++) {
+    const results = await pool.query('SELECT * from segmentEffort where activityId = ($1)', [stravaActivities[i].id]);
 
-  const segmentPromises = stravaActivities.map((activity) => {
+    if (lodash.isEmpty(results.rows)) {
+      stravaActivitiesPromises.push(strava.getActivity(request.body.accessToken, stravaActivities[i].id));
+    }
+  }
+
+  const activities = await Promise.all(stravaActivitiesPromises);
+
+  const segmentPromises = activities.map((activity) => {
     activity.segment_efforts.map((effort) => {
       // prettier-ignore
       pool.query('INSERT INTO segment (id, name, activity_type, distance, city, state, country, created_at, total_elevation_gain) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)', segmentProperties.map((key) => effort.segment[key]), handleSyncError)
@@ -59,7 +63,7 @@ const syncSegmentEfforts = async (request, response) => {
 
   await Promise.all(segmentPromises);
 
-  const segmentEffortPromises = stravaActivities.map((activity) => {
+  const segmentEffortPromises = activities.map((activity) => {
     activity.segment_efforts.map((effort) => {
       const updatedEffort = { ...effort, id: `${effort.id}-${effort.start_date}`, userId, segmentId: effort.segment.id, activityId: activity.id };
 
@@ -77,6 +81,7 @@ const syncLeaderboard = async (request, response) => {
   const userId = parseInt(request.params.id);
 
   if (!request.body.accessToken) throw 'No access token was supplied';
+  if (!(await checkIsAuthValid(request.headers, userId))) throw "You don't have the right to see this...";
 
   pool.query('SELECT * from segmenteffort where userId = ($1)', [userId]).then((results) => {
     const efforts = results.rows;

@@ -5,6 +5,17 @@ const getHeaders = (accessToken) => ({
   crossDomain: true,
 });
 
+const getProfile = async (accessToken) => {
+  try {
+    const result = await axios.get('https://www.strava.com/api/v3/athlete', getHeaders(accessToken));
+
+    return result.data;
+  } catch (e) {
+    console.log('e: ', e.message);
+    throw 'Unable to connect to strava';
+  }
+};
+
 const getActivities = async (accessToken) => {
   const limit = 200;
   try {
@@ -12,6 +23,7 @@ const getActivities = async (accessToken) => {
 
     return result.data;
   } catch (e) {
+    console.log('e: ', e.message);
     throw 'Unable to connect to strava';
   }
 };
@@ -22,6 +34,7 @@ const getActivity = async (accessToken, id) => {
 
     return result.data;
   } catch (e) {
+    console.log('e: ', e.message);
     throw 'Unable to connect to strava';
   }
 };
@@ -32,6 +45,7 @@ const getEquipment = async (accessToken, id) => {
 
     return result.data;
   } catch (e) {
+    console.log('e: ', e.message);
     throw 'Unable to connect to strava';
   }
 };
@@ -47,4 +61,4 @@ const getLeaderboard = async (accessToken, segmentid) => {
   }
 };
 
-module.exports = { getLeaderboard, getEquipment, getActivities, getActivity };
+module.exports = { getProfile, getLeaderboard, getEquipment, getActivities, getActivity };
