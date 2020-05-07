@@ -1,4 +1,7 @@
 const axios = require('axios');
+const promiseDebounce = require('../axios-queue/promiseDebounce');
+
+axios.get = promiseDebounce(axios.get, 1600, 1);
 
 const getHeaders = (accessToken) => ({
   headers: { Authorization: `Bearer ${accessToken}` },
@@ -31,6 +34,7 @@ const getActivities = async (accessToken) => {
 const getActivity = async (accessToken, id) => {
   try {
     const result = await axios.get(`https://www.strava.com/api/v3/activities/${id}`, getHeaders(accessToken));
+    console.log('getActivity: ', id);
 
     return result.data;
   } catch (e) {

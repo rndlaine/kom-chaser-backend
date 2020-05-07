@@ -15,23 +15,26 @@ const syncActivity = async (request, response) => {
   const activitiesWithGear = activities.filter((activity) => !!activity.gear_id);
   const uniqueByGearIds = lodash.uniqBy(activitiesWithGear, (activity) => activity.gear_id);
 
-  uniqueByGearIds.forEach((activity) => {
-    pool.query('SELECT * from gear where id = ($1)', [activity.gear_id]).then((results) => {
-      if (lodash.isEmpty(results.rows)) {
-        strava.getEquipment(request.body.accessToken, activity.gear_id).then((gear) => {
-          // prettier-ignore
-          pool.query('INSERT INTO gear (id, name, description, primary_gear) VALUES ($1,$2,$3,$4)', gearProperties.map((key) => gear[key]), handleSyncError);
-        });
-      }
-    });
-  });
+  let i = 0;
+  for (i = 0; i < uniqueByGearIds.length; i++) {
+    const activity = uniqueByGearIds[i];
+    const results = pool.query('SELECT * from gear where id = ($1)', [activity.gear_id]);
 
-  activities.forEach((activity) => {
+    if (lodash.isEmpty(results.rows)) {
+      const gear = await strava.getEquipment(request.body.accessToken, activity.gear_id);
+      // prettier-ignore
+      await pool.query('INSERT INTO gear (id, name, description, primary_gear) VALUES ($1,$2,$3,$4)', gearProperties.map((key) => gear[key]), handleSyncError);
+    }
+  }
+
+  i = 0;
+  for (i = 0; i < activities.length; i++) {
+    const activity = activities[i];
     const updatedActivity = { ...activity, user_id: userId };
 
     // prettier-ignore
-    pool.query('INSERT INTO activity (id, userId, name, distance, moving_time, elapsed_time, total_elevation_gain, elev_high, elev_low, type, start_date, average_speed, gear_id, average_watts, description) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)', activityProperties.map((key) => updatedActivity[key]), handleSyncError);
-  });
+    await pool.query('INSERT INTO activity (id, userId, name, distance, moving_time, elapsed_time, total_elevation_gain, elev_high, elev_low, type, start_date, average_speed, gear_id, average_watts, description) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)', activityProperties.map((key) => updatedActivity[key]), handleSyncError);
+  }
 
   response.status(201).send(`Activities Synced for userID: ${userId}`);
 };
@@ -82,24 +85,22 @@ const syncLeaderboard = async (request, response) => {
 
   if (!request.body.accessToken) throw 'No access token was supplied';
 
-  pool.query('SELECT * from segmenteffort where userId = ($1)', [userId]).then((results) => {
-    const efforts = results.rows;
-    const uniqSegments = lodash.uniqBy(efforts, (effort) => effort.segmentid);
+  const results = await pool.query('SELECT * from segmenteffort where userId = ($1)', [userId]);
+  const efforts = results.rows;
+  const uniqSegments = lodash.uniqBy(efforts, (effort) => effort.segmentid);
 
-    uniqSegments.forEach((segment) => {
-      pool.query('SELECT * from leaderboard where segmentid = ($1)', [segment.segmentid]).then((results) => {
-        if (lodash.isEmpty(results.rows)) {
-          strava.getLeaderboard(request.body.accessToken, segment.segmentid).then((leaderboard) => {
-            leaderboard.entries.map((entry) => {
-              const updatedEntry = { ...entry, segmentId: segment.segmentid };
-              // prettier-ignore
-              pool.query('INSERT INTO leaderboard (segmentId, athlete_name, elapsed_time, moving_time, start_date, rank) VALUES ($1,$2,$3,$4,$5,$6)', leaderboardProperties.map((key) => updatedEntry[key]), handleSyncError);
-            });
-          });
-        }
-      });
-    });
-  });
+  let i;
+  for (i = 0; i < uniqSegments.length; i++) {
+    const segment = uniqSegments[i];
+    const leaderboardResult = await pool.query('SELECT * from leaderboard where segmentid = ($1)', [segment.segmentid]);
+
+    if (lodash.isEmpty(leaderboardResult.rows)) {
+      const leaderboard = await strava.getLeaderboard(request.body.accessToken, segment.segmentid);
+      const updatedEntry = { ...leaderboard.entries[0], segmentId: segment.segmentid };
+      // prettier-ignore
+      pool.query('INSERT INTO leaderboard (segmentId, athlete_name, elapsed_time, moving_time, start_date, rank) VALUES ($1,$2,$3,$4,$5,$6)', leaderboardProperties.map((key) => updatedEntry[key]), handleSyncError);
+    }
+  }
 
   response.status(201).send(`Activities Synced for userID: ${userId}`);
 };
