@@ -34,7 +34,6 @@ const getActivities = async (accessToken) => {
 const getActivity = async (accessToken, id) => {
   try {
     const result = await axios.get(`https://www.strava.com/api/v3/activities/${id}`, getHeaders(accessToken));
-    console.log('getActivity: ', id);
 
     return result.data;
   } catch (e) {
