@@ -55,10 +55,15 @@ const syncSegmentEfforts = async (request, response) => {
       let j = 0;
       for (j = 0; j < activity.segment_efforts.length; j++) {
         const effort = activity.segment_efforts[j];
-        const updatedEffort = { ...effort, id: `${effort.id}-${effort.start_date}`, userId, segmentId: effort.segment.id, activityId: activity.id };
 
         // prettier-ignore
         await pool.query('INSERT INTO segment (id, name, activity_type, distance, city, state, country, total_elevation_gain) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)', segmentProperties.map((key) => effort.segment[key]), handleSyncError)
+      }
+
+      j = 0;
+      for (j = 0; j < activity.segment_efforts.length; j++) {
+        const effort = activity.segment_efforts[j];
+        const updatedEffort = { ...effort, id: `${effort.id}-${effort.start_date}`, userId, segmentId: effort.segment.id, activityId: activity.id };
 
         // prettier-ignore
         await pool.query('INSERT INTO segmentEffort (id, userId, segmentId, activityId, elapsed_time, start_date, distance, is_kom, name, moving_time, average_watts) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)', effortProperties.map((key) => updatedEffort[key]), handleSyncError);
