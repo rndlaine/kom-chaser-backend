@@ -1,5 +1,7 @@
 CREATE TABLE athlete (
-    id bigint NOT NULL PRIMARY KEY
+    id bigint NOT NULL PRIMARY KEY,
+    lastSyncDate date,
+    isSyncing boolean
 );
 
 CREATE TABLE activity (
@@ -20,6 +22,8 @@ CREATE TABLE activity (
     description text
 );
 
+5957906
+
 CREATE TABLE segment (
     id bigint NOT NULL PRIMARY KEY,
     name text,
@@ -28,6 +32,7 @@ CREATE TABLE segment (
     city text,
     state text,
     country text,
+    created_at date,
     total_elevation_gain float,
     kom_athlete_name text,
     kom_elapsed_time bigint,

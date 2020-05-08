@@ -7,6 +7,7 @@ const { leaderboardProperties, gearProperties, activityProperties, effortPropert
 const syncActivity = async (request, response) => {
   const userId = parseInt(request.params.id);
   if (!request.body.accessToken) throw 'No access token was supplied';
+  await pool.query('Update athlete SET isSyncing = true, lastSyncDate = to_timestamp($1) where id = ($2)', [Date.now() / 1000, userId]);
 
   await pool.query('INSERT INTO athlete (id) VALUES ($1)', [userId], handleSyncError);
 
@@ -36,13 +37,16 @@ const syncActivity = async (request, response) => {
     await pool.query('INSERT INTO activity (id, userId, name, distance, moving_time, elapsed_time, total_elevation_gain, elev_high, elev_low, type, start_date, average_speed, gear_id, average_watts, description) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)', activityProperties.map((key) => updatedActivity[key]), handleSyncError);
   }
 
+  await pool.query('Update athlete SET isSyncing = false where id = ($1)', [userId]);
+
   response.status(201).send(`Activities Synced for userID: ${userId}`);
 };
 
 const syncSegmentEfforts = async (request, response) => {
+  const userId = parseInt(request.params.id);
   if (!request.body.accessToken) throw 'No access token was supplied';
 
-  const userId = parseInt(request.params.id);
+  await pool.query('Update athlete SET isSyncing = true, lastSyncDate = to_timestamp($1) where id = ($2)', [Date.now() / 1000, userId]);
   const stravaActivities = await strava.getActivities(request.body.accessToken);
 
   let i = 0;
@@ -70,6 +74,8 @@ const syncSegmentEfforts = async (request, response) => {
     }
   }
 
+  await pool.query('Update athlete SET isSyncing = false where id = ($1)', [userId]);
+
   response.status(201).send(`Efforts Synced for userID: ${userId}`);
 };
 
@@ -77,6 +83,7 @@ const syncLeaderboard = async (request, response) => {
   const userId = parseInt(request.params.id);
 
   if (!request.body.accessToken) throw 'No access token was supplied';
+  await pool.query('Update athlete SET isSyncing = true, lastSyncDate = to_timestamp($1) where id = ($2)', [Date.now() / 1000, userId]);
 
   const results = await pool.query('SELECT * from segmenteffort where userId = ($1)', [userId]);
   const efforts = results.rows;
@@ -89,12 +96,14 @@ const syncLeaderboard = async (request, response) => {
 
     if (!lodash.isEmpty(segmentResult.rows) && !segmentResult.rows[0].kom_elapsed_time) {
       const leaderboard = await strava.getLeaderboard(request.body.accessToken, segment.segmentid);
-      console.log('getLeaderboard: ', segment.segmentid);
       const updatedEntry = { ...leaderboard.entries.find((x) => x.rank === 1), segmentId: segment.segmentid };
+
       // prettier-ignore
       pool.query('UPDATE segment SET kom_athlete_name = $2, kom_elapsed_time = $3, kom_moving_time = $4, kom_start_date = $5, kom_rank = $6 WHERE id = $1', leaderboardProperties.map((key) => updatedEntry[key]), handleSyncError);
     }
   }
+
+  await pool.query('Update athlete SET isSyncing = false where id = ($1)', [userId]);
 
   response.status(201).send(`Activities Synced for userID: ${userId}`);
 };
