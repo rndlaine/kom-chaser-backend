@@ -60,7 +60,7 @@ const syncSegmentEfforts = async (request, response) => {
         try {
           // prettier-ignore
           await pool.query('INSERT INTO segment (id, name, activity_type, distance, city, state, country, total_elevation_gain) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)', segmentProperties.map((key) => effort.segment[key]))
-        } catch (err) {
+        } catch (error) {
           if (error && !error.message.includes('duplicate key value violates')) throw error;
         }
 
