@@ -22,8 +22,6 @@ CREATE TABLE activity (
     description text
 );
 
-5957906
-
 CREATE TABLE segment (
     id bigint NOT NULL PRIMARY KEY,
     name text,

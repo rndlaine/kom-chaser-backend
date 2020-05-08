@@ -38,8 +38,6 @@ const syncActivity = async (request, response) => {
   }
 
   await pool.query('Update athlete SET isSyncing = false where id = ($1)', [userId]);
-
-  response.status(201).send(`Activities Synced for userID: ${userId}`);
 };
 
 const syncSegmentEfforts = async (request, response) => {
@@ -75,8 +73,6 @@ const syncSegmentEfforts = async (request, response) => {
   }
 
   await pool.query('Update athlete SET isSyncing = false where id = ($1)', [userId]);
-
-  response.status(201).send(`Efforts Synced for userID: ${userId}`);
 };
 
 const syncLeaderboard = async (request, response) => {
@@ -104,8 +100,14 @@ const syncLeaderboard = async (request, response) => {
   }
 
   await pool.query('Update athlete SET isSyncing = false where id = ($1)', [userId]);
-
-  response.status(201).send(`Activities Synced for userID: ${userId}`);
 };
 
-module.exports = { syncLeaderboard, syncActivity, syncSegmentEfforts };
+const syncAll = async (request, response) => {
+  await syncActivity(request, response);
+  await syncSegmentEfforts(request, response);
+  await syncLeaderboard(request, response);
+
+  response.status(201).send(` Synced complete`);
+};
+
+module.exports = { syncAll, syncLeaderboard, syncActivity, syncSegmentEfforts };

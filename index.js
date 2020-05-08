@@ -29,9 +29,7 @@ app.get('/athlete/:id/segmentefforts', db.getSegmentEffortsByUser);
 app.get('/athlete/:id/bestsegmentefforts', db.getBestSegmentEffortsByUser);
 app.get('/segment/:id/segmentefforts', db.getSegmentEffortsBySegment);
 app.get('/segmentefforts/:id', db.getSegmentEffort);
-app.post('/athlete/:id/sync-activity', db.syncActivity);
-app.post('/athlete/:id/sync-efforts', db.syncSegmentEfforts);
-app.post('/athlete/:id/sync-leaderboard', db.syncLeaderboard);
+app.post('/athlete/:id/sync', db.syncAll);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
