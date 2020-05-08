@@ -29,7 +29,6 @@ app.get('/athlete/:id/segmentefforts', db.getSegmentEffortsByUser);
 app.get('/athlete/:id/bestsegmentefforts', db.getBestSegmentEffortsByUser);
 app.get('/segment/:id/segmentefforts', db.getSegmentEffortsBySegment);
 app.get('/segmentefforts/:id', db.getSegmentEffort);
-app.get('/segment/:id/leaderboard', db.getSegmentLeaderboard);
 app.post('/athlete/:id/sync-activity', db.syncActivity);
 app.post('/athlete/:id/sync-efforts', db.syncSegmentEfforts);
 app.post('/athlete/:id/sync-leaderboard', db.syncLeaderboard);

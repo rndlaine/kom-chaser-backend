@@ -3,14 +3,11 @@ const { pool } = require('./pool');
 const { getKOMRating } = require('../helpers/KOMRatingHelpers');
 
 const getKOMRatings = async (rows) => {
-  const leaderboards = await pool.query('SELECT * FROM leaderboard', []);
   const segments = await pool.query('SELECT * FROM segment', []);
 
   return rows.map((item) => {
-    const board = leaderboards.rows.find((leaderboard) => leaderboard.segmentid === item.segmentid && leaderboard.rank === '1');
     const segment = segments.rows.find((x) => x.id === item.segmentid) || {};
-
-    return { ...item, ...getKOMRating(item, board), city: segment.city };
+    return { ...item, ...getKOMRating(item, segment), city: segment.city };
   });
 };
 
@@ -37,10 +34,16 @@ const getSegmentEffortsByUser = async (request, response) => {
 const getBestSegmentEffortsByUser = async (request, response) => {
   const userId = parseInt(request.params.id);
 
-  pool.query('SELECT * FROM segmenteffort WHERE userid = $1', [userId], async (error, results) => {
+  const activitiesResult = await pool.query('SELECT * FROM activity WHERE userid = $1', [userId]);
+  pool.query('SELECT * FROM segmenteffort WHERE segmenteffort.userid = $1', [userId], async (error, results) => {
     if (error) throw error;
 
-    const updatedEfforts = await getKOMRatings(results.rows);
+    const filteredResults = results.rows.filter((row) => {
+      const activity = activitiesResult.rows.find((activity) => activity.id === row.activityid);
+      return activity.type !== 'VirtualRide';
+    });
+
+    const updatedEfforts = await getKOMRatings(filteredResults);
     const sortedEfforts = lodash.sortBy(updatedEfforts, (effort) => effort.komScore);
     const uniqueEfforts = lodash.uniqBy(sortedEfforts.reverse(), (item) => item.segmentid);
 

@@ -45,37 +45,26 @@ const syncSegmentEfforts = async (request, response) => {
   const userId = parseInt(request.params.id);
   const stravaActivities = await strava.getActivities(request.body.accessToken);
 
-  let stravaActivitiesPromises = [];
   let i = 0;
   for (i = 0; i < stravaActivities.length; i++) {
     const results = await pool.query('SELECT * from segmentEffort where activityId = ($1)', [stravaActivities[i].id]);
 
     if (lodash.isEmpty(results.rows)) {
-      stravaActivitiesPromises.push(strava.getActivity(request.body.accessToken, stravaActivities[i].id));
+      const activity = await strava.getActivity(request.body.accessToken, stravaActivities[i].id);
+
+      let j = 0;
+      for (j = 0; j < activity.segment_efforts.length; j++) {
+        const effort = activity.segment_efforts[j];
+        const updatedEffort = { ...effort, id: `${effort.id}-${effort.start_date}`, userId, segmentId: effort.segment.id, activityId: activity.id };
+
+        // prettier-ignore
+        await pool.query('INSERT INTO segment (id, name, activity_type, distance, city, state, country, total_elevation_gain) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)', segmentProperties.map((key) => effort.segment[key]), handleSyncError)
+
+        // prettier-ignore
+        await pool.query('INSERT INTO segmentEffort (id, userId, segmentId, activityId, elapsed_time, start_date, distance, is_kom, name, moving_time, average_watts) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)', effortProperties.map((key) => updatedEffort[key]), handleSyncError);
+      }
     }
   }
-
-  const activities = await Promise.all(stravaActivitiesPromises);
-
-  const segmentPromises = activities.map((activity) => {
-    activity.segment_efforts.map((effort) => {
-      // prettier-ignore
-      pool.query('INSERT INTO segment (id, name, activity_type, distance, city, state, country, created_at, total_elevation_gain) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)', segmentProperties.map((key) => effort.segment[key]), handleSyncError)
-    });
-  });
-
-  await Promise.all(segmentPromises);
-
-  const segmentEffortPromises = activities.map((activity) => {
-    activity.segment_efforts.map((effort) => {
-      const updatedEffort = { ...effort, id: `${effort.id}-${effort.start_date}`, userId, segmentId: effort.segment.id, activityId: activity.id };
-
-      // prettier-ignore
-      pool.query('INSERT INTO segmentEffort (id, userId, segmentId, activityId, elapsed_time, start_date, distance, is_kom, name, moving_time, average_watts) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)', effortProperties.map((key) => updatedEffort[key]), handleSyncError);
-    });
-  });
-
-  await Promise.all(segmentEffortPromises);
 
   response.status(201).send(`Efforts Synced for userID: ${userId}`);
 };
@@ -92,13 +81,14 @@ const syncLeaderboard = async (request, response) => {
   let i;
   for (i = 0; i < uniqSegments.length; i++) {
     const segment = uniqSegments[i];
-    const leaderboardResult = await pool.query('SELECT * from leaderboard where segmentid = ($1)', [segment.segmentid]);
+    const segmentResult = await pool.query('SELECT * from segment where id = ($1)', [segment.segmentid]);
 
-    if (lodash.isEmpty(leaderboardResult.rows)) {
+    if (!lodash.isEmpty(segmentResult.rows) && !segmentResult.rows[0].kom_elapsed_time) {
       const leaderboard = await strava.getLeaderboard(request.body.accessToken, segment.segmentid);
-      const updatedEntry = { ...leaderboard.entries[0], segmentId: segment.segmentid };
+      console.log('getLeaderboard: ', segment.segmentid);
+      const updatedEntry = { ...leaderboard.entries.find((x) => x.rank === 1), segmentId: segment.segmentid };
       // prettier-ignore
-      pool.query('INSERT INTO leaderboard (segmentId, athlete_name, elapsed_time, moving_time, start_date, rank) VALUES ($1,$2,$3,$4,$5,$6)', leaderboardProperties.map((key) => updatedEntry[key]), handleSyncError);
+      pool.query('UPDATE segment SET kom_athlete_name = $2, kom_elapsed_time = $3, kom_moving_time = $4, kom_start_date = $5, kom_rank = $6 WHERE id = $1', leaderboardProperties.map((key) => updatedEntry[key]), handleSyncError);
     }
   }
 

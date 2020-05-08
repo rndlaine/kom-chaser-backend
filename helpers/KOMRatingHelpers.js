@@ -2,12 +2,12 @@ const moment = require('moment');
 
 const getFormattedDate = (seconds) => moment.utc(seconds * 1000).format('HH:mm:ss');
 
-const getKOMRating = (effort, leaderboard) => {
-  const komSeconds = leaderboard ? leaderboard.elapsed_time : 0;
+const getKOMRating = (effort, segment) => {
+  const komSeconds = segment.kom_elapsed_time ? segment.kom_elapsed_time : 0;
 
   const effortTime = getFormattedDate(effort.elapsed_time);
   const komTime = getFormattedDate(komSeconds);
-  const timeToKom = getFormattedDate(effort.elapsed_time - komSeconds);
+  const timeToKom = effort.elapsed_time > komSeconds ? getFormattedDate(effort.elapsed_time - komSeconds) : 0;
   const komScore = komSeconds / effort.elapsed_time;
 
   let komRating = 'D';

@@ -10,14 +10,4 @@ const getSegment = async (request, response) => {
   });
 };
 
-const getSegmentLeaderboard = async (request, response) => {
-  const id = parseInt(request.params.id);
-
-  pool.query('SELECT * FROM leaderboard WHERE segmentid = $1', [id], (error, results) => {
-    if (error) throw error;
-
-    response.status(200).json(results.rows);
-  });
-};
-
-module.exports = { getSegment, getSegmentLeaderboard };
+module.exports = { getSegment };
