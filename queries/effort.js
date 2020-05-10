@@ -1,6 +1,8 @@
+const mPolyline = require('@mapbox/polyline');
 const lodash = require('lodash');
 const { pool } = require('./pool');
 const { getKOMRating } = require('../helpers/KOMRatingHelpers');
+const { getDistance } = require('../helpers/coordinateHelpers');
 
 const getKOMRatings = async (rows) => {
   const segments = await pool.query('SELECT * FROM segment', []);
@@ -71,4 +73,45 @@ const getSegmentEffort = async (request, response) => {
   });
 };
 
-module.exports = { getBestSegmentEffortsByUser, getSegmentEffortsBySegment, getSegmentEffort, getSegmentEffortsByUser, getSegmentEffortsByActivity };
+const getClosestSegmentEffortsByUser = async (request, response) => {
+  const userId = parseInt(request.params.id);
+  const userLat = parseFloat(request.params.lat);
+  const userLon = parseFloat(request.params.lon);
+
+  pool.query('SELECT * FROM segmenteffort WHERE segmenteffort.userid = $1', [userId], async (error, results) => {
+    if (error) throw error;
+
+    const efforts = results.rows;
+    const closestResults = [];
+    let i;
+
+    for (i = 0; i < efforts.length; i++) {
+      const effort = efforts[i];
+      const segmentResults = await pool.query('SELECT * FROM segment WHERE id = $1', [effort.segmentid]);
+      const segment = segmentResults.rows[0];
+      const polyline = mPolyline.decode(segment.polyline);
+      const firstCoords = polyline[0];
+
+      const distance = getDistance(userLat, userLon, firstCoords[0], firstCoords[1]);
+
+      if (distance < 20) {
+        closestResults.push(effort);
+      }
+    }
+
+    const updatedEfforts = await getKOMRatings(closestResults);
+    const sortedEfforts = lodash.sortBy(updatedEfforts, (effort) => effort.komScore);
+    const uniqueEfforts = lodash.uniqBy(sortedEfforts.reverse(), (item) => item.segmentid);
+
+    response.status(200).json(uniqueEfforts.slice(0, 100));
+  });
+};
+
+module.exports = {
+  getClosestSegmentEffortsByUser,
+  getBestSegmentEffortsByUser,
+  getSegmentEffortsBySegment,
+  getSegmentEffort,
+  getSegmentEffortsByUser,
+  getSegmentEffortsByActivity,
+};

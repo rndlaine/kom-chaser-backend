@@ -27,6 +27,7 @@ app.get('/gear/:id', db.getEquipment);
 app.get('/activity/:id/segmentefforts', db.getSegmentEffortsByActivity);
 app.get('/athlete/:id/segmentefforts', db.getSegmentEffortsByUser);
 app.get('/athlete/:id/bestsegmentefforts', db.getBestSegmentEffortsByUser);
+app.get('/athlete/:id/closestsegmentefforts/:lat/:lon', db.getClosestSegmentEffortsByUser);
 app.get('/segment/:id/segmentefforts', db.getSegmentEffortsBySegment);
 app.get('/segmentefforts/:id', db.getSegmentEffort);
 app.post('/athlete/:id/sync', db.syncAll);
