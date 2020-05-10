@@ -16,6 +16,7 @@
   "author": "fredbegin",
   "license": "ISC",
   "dependencies": {
+    "@mapbox/polyline": "^1.1.0",
     "axios": "^0.19.2",
     "bluebird": "^3.7.2",
     "cors": "^2.8.5",

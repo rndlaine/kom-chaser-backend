@@ -57,14 +57,20 @@ const syncSegmentEfforts = async (request, response) => {
       let j = 0;
       for (j = 0; j < activity.segment_efforts.length; j++) {
         const effort = activity.segment_efforts[j];
-        const updatedEffort = { ...effort, id: `${effort.id}-${effort.start_date}`, userId, segmentId: effort.segment.id, activityId: activity.id };
+        const bdSegment = await pool.query('SELECT * from segment where id = ($1)', [effort.segment.id]);
 
-        try {
-          // prettier-ignore
-          await pool.query('INSERT INTO segment (id, name, activity_type, distance, city, state, country, total_elevation_gain) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)', segmentProperties.map((key) => effort.segment[key]))
-        } catch (error) {
-          if (error && !error.message.includes('duplicate key value violates')) throw error;
+        if (bdSegment.rows.length === 0) {
+          const segment = await strava.getSegment(request.body.accessToken, effort.segment.id);
+
+          try {
+            // prettier-ignore
+            await pool.query('INSERT INTO segment (id, name, activity_type, distance, city, state, country, total_elevation_gain, polyline) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)', [...segmentProperties.map((key) => effort.segment[key]), lodash.get(segment, "map.polyline")])
+          } catch (error) {
+            if (error && !error.message.includes('duplicate key value violates')) throw error;
+          }
         }
+
+        const updatedEffort = { ...effort, id: `${effort.id}-${effort.start_date}`, userId, segmentId: effort.segment.id, activityId: activity.id };
 
         // prettier-ignore
         await pool.query('INSERT INTO segmentEffort (id, userId, segmentId, activityId, elapsed_time, start_date, distance, is_kom, name, moving_time, average_watts) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)', effortProperties.map((key) => updatedEffort[key]), handleSyncError);

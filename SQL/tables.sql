@@ -36,7 +36,8 @@ CREATE TABLE segment (
     kom_elapsed_time bigint,
     kom_moving_time bigint,
     kom_start_date date,
-    kom_rank bigint
+    kom_rank bigint,
+    polyline text
 );
 
 CREATE TABLE segmentEffort (
